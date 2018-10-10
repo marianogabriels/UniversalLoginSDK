@@ -33,12 +33,17 @@ class IdentityService {
   async executeSigned(contractAddress, message) {
     const contract = new ethers.Contract(contractAddress, this.abi, this.wallet);
     const addKeySighash = new Interface(Identity.interface).functions.addKey.sighash;
+    const addKeysSighash = new Interface(Identity.interface).functions.addKeys.sighash;
     if (message.to === contractAddress && message.data.slice(0, addKeySighash.length) === addKeySighash) {
       const [address] = (this.codec.decode(['bytes32', 'uint256', 'uint256'], message.data.replace(addKeySighash.slice(2), '')));
       const key = utils.hexlify(utils.stripZeros(address));
       await this.authorisationService.removeRequest(contractAddress, key);
       const transaction = await contract.executeSigned(message.to, message.value, message.data, message.nonce, message.gasToken, message.gasPrice, message.gasLimit, message.signature);
       this.hooks.emit('added', key);
+      return transaction;
+    } else if (message.to === contractAddress && message.data.slice(0, addKeysSighash.length) === addKeysSighash) {
+      const transaction = await contract.executeSigned(message.to, message.value, message.data, message.nonce, message.gasToken, message.gasPrice, message.gasLimit, message.signature);
+      this.hooks.emit('keysAdded');
       return transaction;
     }
     return await contract.executeSigned(message.to, message.value, message.data, message.nonce, message.gasToken, message.gasPrice, message.gasLimit, message.signature);

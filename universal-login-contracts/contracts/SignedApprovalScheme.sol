@@ -121,8 +121,7 @@ contract SignedApprovalScheme is KeyHolder {
         uint256 startingGas = gasleft();
         /* solium-disable-next-line security/no-call-value */
         success = executions[_id].to.call.value(executions[_id].value)(executions[_id].data);
-        uint256 gasUsed = startingGas - gasleft();
-
+        uint256 gasUsed = startingGas.sub(gasleft());
         if (success) {
             refund(_id, gasUsed);
             emit Executed(_id, executions[_id].to, executions[_id].value, executions[_id].data);
@@ -136,5 +135,5 @@ contract SignedApprovalScheme is KeyHolder {
             StandardToken token = StandardToken(executions[_id].gasToken);
             token.transfer(msg.sender, _gasUsed.mul(executions[_id].gasPrice));
         } 
-    } 
+    }
 }
